@@ -4,6 +4,7 @@ const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
 const BASE_URL = "http://api.tvmaze.com/";
+const $episodesList = $("#episodesList");
 
 
 /** Given a search term, search for tv shows that match that query.
@@ -21,35 +22,22 @@ async function getShowsByTerm(term) {
    */
 
   // run async function using term to make request to tv maze api
-  let response = await axios.get(`${BASE_URL}search/shows?q=${term}`);
+  const response = await axios.get(`${BASE_URL}search/shows?q=${term}`);
   // console.log(response.data);
-  let showArray = response.data.map(handleShowData);
+  const shows = response.data.map(_handleShowData);
   // console.log(showArray)
-  return showArray;
-  // return [
-  //   {
-  //     id: 1767,
-  //     name: "The Bletchley Circle",
-  //     summary:
-  //       `<p><b>The Bletchley Circle</b> follows the journey of four ordinary 
-  //          women with extraordinary skills that helped to end World War II.</p>
-  //        <p>Set in 1952, Susan, Millie, Lucy and Jean have returned to their 
-  //          normal lives, modestly setting aside the part they played in 
-  //          producing crucial intelligence, which helped the Allies to victory 
-  //          and shortened the war. When Susan discovers a hidden code behind an
-  //          unsolved murder she is met by skepticism from the police. She 
-  //          quickly realises she can only begin to crack the murders and bring
-  //          the culprit to justice with her former friends.</p>`,
-  //     image:
-  //         "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
-  //   }]
+  return shows;
 }
-function handleShowData(eachShow) {
+
+/** Parse received data from each show and return {id, name, summary, image} */
+function _handleShowData(eachShow) {
   return {
     id: eachShow.show.id,
     name: eachShow.show.name,
     summary: eachShow.show.summary,
-    image: eachShow.show.image ? eachShow.show.image.medium : "https://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
+    image: eachShow.show.image
+      ? eachShow.show.image.medium 
+      : "https://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
   }
 }
 
@@ -106,31 +94,46 @@ $searchForm.on("submit", async function (evt) {
  */
 
 async function getEpisodesOfShow(id) {
-  let episodeResponse = await axios.get(`${BASE_URL}shows/${id}/episodes`);
-  let episodes = episodeResponse.data.map(handleEpisodeData);
+  let res = await axios.get(`${BASE_URL}shows/${id}/episodes`);
+  let episodes = res.data.map(_handleEpisodeData);
   return episodes;
 }
 
-function handleEpisodeData(eachEpisode) {
+/** Parse data from each episode to return {id, name, season, number} */
+function _handleEpisodeData(eachEpisode) { //"_" denotes internal function that other people might not need to know
   return {
     id: eachEpisode.id,
     name: eachEpisode.name,
     season: eachEpisode.season,
     number: eachEpisode.number
-  }
+  };
 }
 
 /** takes and array of episodes data objects, turn into a list, and append to DOM */
-//
-//loop through the array, 
-function populateEpisodes(episodes) {
-  $episodesArea.clear();
-  let $episodeList = $("#episodeList")
-  for (episode of episodes) {
-    let episodeLi = `
-     <li>${episode.name} (season ${episode.season}, number ${episode.number})  </li>
-    `
-    $episodeList.append(episodeLi)
 
+function populateEpisodes(episodes) {
+  $episodesList.empty();
+  for (let episode of episodes) {
+    const episodeLi = `
+     <li>${episode.name} (season ${episode.season}, number ${episode.number})  </li>
+    `;
+    $episodesList.append(episodeLi);
   }
+}
+
+/** Add event listener to showsList, determine which button was clicked
+ * obtain parent data-show-id through parentUntil to class of Show
+ * Trigger getEpisodesOfShow and populateEpisodes using id
+*/
+
+$showsList.on("click", "button", episodeButton);
+
+async function episodeButton(evt) {
+  const $show = $(evt.target).closest(".Show");
+  //console.log($show);
+  const showID = $show.data("show-id");
+  //console.log(showID);
+  const episodes = await getEpisodesOfShow(showID);
+  populateEpisodes(episodes);
+  $episodesArea.show();
 }
