@@ -3,6 +3,7 @@
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
+const BASE_URL = "http://api.tvmaze.com/";
 
 
 /** Given a search term, search for tv shows that match that query.
@@ -20,18 +21,10 @@ async function getShowsByTerm(term) {
    */
 
   // run async function using term to make request to tv maze api
-  let response = await axios.get(`http://api.tvmaze.com/search/shows?q=${term}`);
+  let response = await axios.get(`${BASE_URL}search/shows?q=${term}`);
   // console.log(response.data);
-  let showArray = response.data.map((eachShow) => {
-
-    return {
-      id: eachShow.show.id,
-      name: eachShow.show.name,
-      summary: eachShow.show.summary,
-      image: eachShow.show.image ? eachShow.show.image.medium : "https://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
-    }
-  })
-  console.log(showArray)
+  let showArray = response.data.map(handleShowData);
+  // console.log(showArray)
   return showArray;
   // return [
   //   {
@@ -51,7 +44,14 @@ async function getShowsByTerm(term) {
   //         "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
   //   }]
 }
-
+function handleShowData(eachShow) {
+  return {
+    id: eachShow.show.id,
+    name: eachShow.show.name,
+    summary: eachShow.show.summary,
+    image: eachShow.show.image ? eachShow.show.image.medium : "https://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
+  }
+}
 
 /** Given list of shows, create markup for each and to DOM */
 
@@ -65,7 +65,7 @@ function populateShows(shows) {
          <div class="media">
            <img 
               src=${show.image}
-              alt= image for ${show.name} 
+              alt="image for ${show.name}"
               class="w-25 mr-3">
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
@@ -105,8 +105,32 @@ $searchForm.on("submit", async function (evt) {
  *      { id, name, season, number }
  */
 
-// async function getEpisodesOfShow(id) { }
+async function getEpisodesOfShow(id) {
+  let episodeResponse = await axios.get(`${BASE_URL}shows/${id}/episodes`);
+  let episodes = episodeResponse.data.map(handleEpisodeData);
+  return episodes;
+}
 
-/** Write a clear docstring for this function... */
+function handleEpisodeData(eachEpisode) {
+  return {
+    id: eachEpisode.id,
+    name: eachEpisode.name,
+    season: eachEpisode.season,
+    number: eachEpisode.number
+  }
+}
 
-// function populateEpisodes(episodes) { }
+/** takes and array of episodes data objects, turn into a list, and append to DOM */
+//
+//loop through the array, 
+function populateEpisodes(episodes) {
+  $episodesArea.clear();
+  let $episodeList = $("#episodeList")
+  for (episode of episodes) {
+    let episodeLi = `
+     <li>${episode.name} (season ${episode.season}, number ${episode.number})  </li>
+    `
+    $episodeList.append(episodeLi)
+
+  }
+}
