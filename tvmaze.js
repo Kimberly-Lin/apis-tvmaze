@@ -21,8 +21,18 @@ async function getShowsByTerm(term) {
 
   // run async function using term to make request to tv maze api
   let response = await axios.get(`http://api.tvmaze.com/search/shows?q=${term}`);
-  //console.log(response.data);
-  return response.data;
+  // console.log(response.data);
+  let showArray = response.data.map((eachShow) => {
+
+    return {
+      id: eachShow.show.id,
+      name: eachShow.show.name,
+      summary: eachShow.show.summary,
+      image: eachShow.show.image ? eachShow.show.image.medium : "https://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
+    }
+  })
+  console.log(showArray)
+  return showArray;
   // return [
   //   {
   //     id: 1767,
@@ -39,22 +49,23 @@ async function getShowsByTerm(term) {
   //          the culprit to justice with her former friends.</p>`,
   //     image:
   //         "http://static.tvmaze.com/uploads/images/medium_portrait/147/369403.jpg"
-  //   }
+  //   }]
 }
 
 
 /** Given list of shows, create markup for each and to DOM */
 
 function populateShows(shows) {
+
   $showsList.empty();
 
   for (let show of shows) {
     const $show = $(
-        `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
+      `<div data-show-id="${show.id}" class="Show col-md-12 col-lg-6 mb-4">
          <div class="media">
            <img 
-              src="http://static.tvmaze.com/uploads/images/medium_portrait/160/401704.jpg" 
-              alt="Bletchly Circle San Francisco" 
+              src=${show.image}
+              alt= image for ${show.name} 
               class="w-25 mr-3">
            <div class="media-body">
              <h5 class="text-primary">${show.name}</h5>
@@ -67,7 +78,8 @@ function populateShows(shows) {
        </div>
       `);
 
-    $showsList.append($show);  }
+    $showsList.append($show);
+  }
 }
 
 
